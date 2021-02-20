@@ -1,7 +1,7 @@
 unit WeaponAmmoCounter;
 {$IFDEF FPC}{$MODE DELPHI}{$ENDIF}
 
-{$define DISABLE_AUTOAMMOCHANGE}  //отключает автоматическую смену типа патронов по нажатию клавиши релоада при отсутсвии патронов текущего типа; при андефе поломаются двустволы, когда в инвентаре последний патрон!
+{$define DISABLE_AUTOAMMOCHANGE}  //Г®ГІГЄГ«ГѕГ·Г ГҐГІ Г ГўГІГ®Г¬Г ГІГЁГ·ГҐГ±ГЄГіГѕ Г±Г¬ГҐГ­Гі ГІГЁГЇГ  ГЇГ ГІГ°Г®Г­Г®Гў ГЇГ® Г­Г Г¦Г ГІГЁГѕ ГЄГ«Г ГўГЁГёГЁ Г°ГҐГ«Г®Г Г¤Г  ГЇГ°ГЁ Г®ГІГ±ГіГІГ±ГўГЁГЁ ГЇГ ГІГ°Г®Г­Г®Гў ГІГҐГЄГіГ№ГҐГЈГ® ГІГЁГЇГ ; ГЇГ°ГЁ Г Г­Г¤ГҐГґГҐ ГЇГ®Г«Г®Г¬Г ГѕГІГ±Гї Г¤ГўГіГ±ГІГўГ®Г«Г», ГЄГ®ГЈГ¤Г  Гў ГЁГ­ГўГҐГ­ГІГ Г°ГҐ ГЇГ®Г±Г«ГҐГ¤Г­ГЁГ© ГЇГ ГІГ°Г®Г­!
 
 interface
   procedure CWeaponMagazined__OnAnimationEnd_DoReload(wpn:pointer); stdcall;
@@ -52,7 +52,7 @@ begin
 end;
 
 
-//---------------------------------------------------Свое число патронов в релоаде-------------------------
+//---------------------------------------------------Г‘ГўГ®ГҐ Г·ГЁГ±Г«Г® ГЇГ ГІГ°Г®Г­Г®Гў Гў Г°ГҐГ«Г®Г Г¤ГҐ-------------------------
 procedure CWeaponMagazined__OnAnimationEnd_DoReload(wpn:pointer); stdcall;
 var
   buf: WpnBuf;
@@ -60,21 +60,21 @@ var
   gl_status:cardinal;
 begin
   buf:=GetBuffer(wpn);
-  //если буфера нет или мы уже перезарядилиcь или у нас режим подствола - ничего особенного не делаем
+  //ГҐГ±Г«ГЁ ГЎГіГґГҐГ°Г  Г­ГҐГІ ГЁГ«ГЁ Г¬Г» ГіГ¦ГҐ ГЇГҐГ°ГҐГ§Г Г°ГїГ¤ГЁГ«ГЁcГј ГЁГ«ГЁ Гі Г­Г Г± Г°ГҐГ¦ГЁГ¬ ГЇГ®Г¤Г±ГІГўГ®Г«Г  - Г­ГЁГ·ГҐГЈГ® Г®Г±Г®ГЎГҐГ­Г­Г®ГЈГ® Г­ГҐ Г¤ГҐГ«Г ГҐГ¬
   if (buf=nil) then begin virtual_CWeaponMagazined__ReloadMagazine(wpn); exit; end;
 
   if buf.IsReloaded() then begin buf.SetReloaded(false); exit; end;
   gl_status:=GetGLStatus(wpn);
   if (((gl_status=1) or ((gl_status=2) and IsGLAttached(wpn))) and IsGLEnabled(wpn)) then begin virtual_CWeaponMagazined__ReloadMagazine(wpn); exit; end;
 
-  //посмотрим, каков размер магазина у оружия и сколько патронов в нем сейчас
+  //ГЇГ®Г±Г¬Г®ГІГ°ГЁГ¬, ГЄГ ГЄГ®Гў Г°Г Г§Г¬ГҐГ° Г¬Г ГЈГ Г§ГЁГ­Г  Гі Г®Г°ГіГ¦ГЁГї ГЁ Г±ГЄГ®Г«ГјГЄГ® ГЇГ ГІГ°Г®Г­Г®Гў Гў Г­ГҐГ¬ Г±ГҐГ©Г·Г Г±
   def_magsize:=GetMagCapacityInCurrentWeaponMode(wpn);
   curammocnt:=GetCurrentAmmoCount(wpn);
 
-  //теперь посмотрим на состояние оружия и подумаем, сколько патронов в него запихнуть
+  //ГІГҐГЇГҐГ°Гј ГЇГ®Г±Г¬Г®ГІГ°ГЁГ¬ Г­Г  Г±Г®Г±ГІГ®ГїГ­ГЁГҐ Г®Г°ГіГ¦ГЁГї ГЁ ГЇГ®Г¤ГіГ¬Г ГҐГ¬, Г±ГЄГ®Г«ГјГЄГ® ГЇГ ГІГ°Г®Г­Г®Гў Гў Г­ГҐГЈГ® Г§Г ГЇГЁГµГ­ГіГІГј
   if IsWeaponJammed(wpn) then begin
     SetAmmoTypeChangingStatus(wpn, $FF);
-    mod_magsize:=curammocnt;
+    mod_magsize:=curammocnt-1;
   end else if IsBM16(wpn) then begin
     mod_magsize:=buf.ammo_cnt_to_reload;
   end else if not IsGrenadeMode(wpn) and buf.IsAmmoInChamber() and ((curammocnt=0) or ((GetAmmoTypeChangingStatus(wpn)<>$FF) and not buf.SaveAmmoInChamber() )) then begin
@@ -83,7 +83,7 @@ begin
     mod_magsize:=def_magsize;
   end;
 
-  //изменим емкость магазина, отрелоадимся до нее и восстановим старое значение
+  //ГЁГ§Г¬ГҐГ­ГЁГ¬ ГҐГ¬ГЄГ®Г±ГІГј Г¬Г ГЈГ Г§ГЁГ­Г , Г®ГІГ°ГҐГ«Г®Г Г¤ГЁГ¬Г±Гї Г¤Г® Г­ГҐГҐ ГЁ ГўГ®Г±Г±ГІГ Г­Г®ГўГЁГ¬ Г±ГІГ Г°Г®ГҐ Г§Г­Г Г·ГҐГ­ГЁГҐ
   SetMagCapacityInCurrentWeaponMode(wpn, mod_magsize);
   virtual_CWeaponMagazined__ReloadMagazine(wpn);
   SetMagCapacityInCurrentWeaponMode(wpn, def_magsize);
@@ -100,7 +100,7 @@ asm
 end;
 
 
-//---------------------------------------------------Несмена типа патрона в патроннике в релоаде-------------------------
+//---------------------------------------------------ГЌГҐГ±Г¬ГҐГ­Г  ГІГЁГЇГ  ГЇГ ГІГ°Г®Г­Г  Гў ГЇГ ГІГ°Г®Г­Г­ГЁГЄГҐ Гў Г°ГҐГ«Г®Г Г¤ГҐ-------------------------
 procedure PerformUnloadAmmo(wpn:pointer); stdcall;
 var
   buf:WpnBuf;
@@ -108,25 +108,25 @@ var
   i, cnt:integer;
 begin
   buf:=GetBuffer(wpn);
-  //Вызывается при КАЖДОЙ перезарядке при НЕПУСТОМ магазине - не только при смене типа патронов (это пропатчено другой врезкой)
+  //Г‚Г»Г§Г»ГўГ ГҐГІГ±Гї ГЇГ°ГЁ ГЉГЂГ†Г„ГЋГ‰ ГЇГҐГ°ГҐГ§Г Г°ГїГ¤ГЄГҐ ГЇГ°ГЁ ГЌГ…ГЏГ“Г‘Г’ГЋГЊ Г¬Г ГЈГ Г§ГЁГ­ГҐ - Г­ГҐ ГІГ®Г«ГјГЄГ® ГЇГ°ГЁ Г±Г¬ГҐГ­ГҐ ГІГЁГЇГ  ГЇГ ГІГ°Г®Г­Г®Гў (ГЅГІГ® ГЇГ°Г®ГЇГ ГІГ·ГҐГ­Г® Г¤Г°ГіГЈГ®Г© ГўГ°ГҐГ§ГЄГ®Г©)
 
   if buf <> nil then begin
     buf.is_firstlast_ammo_swapped:=false;
 
     if not IsGrenadeMode(wpn) and buf.IsAmmoInChamber() and buf.SaveAmmoInChamber() then begin
-      //При использовании схемы с патронником в патроне не разряжаем патрон в патроннике
+      //ГЏГ°ГЁ ГЁГ±ГЇГ®Г«ГјГ§Г®ГўГ Г­ГЁГЁ Г±ГµГҐГ¬Г» Г± ГЇГ ГІГ°Г®Г­Г­ГЁГЄГ®Г¬ Гў ГЇГ ГІГ°Г®Г­ГҐ Г­ГҐ Г°Г Г§Г°ГїГ¦Г ГҐГ¬ ГЇГ ГІГ°Г®Г­ Гў ГЇГ ГІГ°Г®Г­Г­ГЁГЄГҐ
 
-      //Меняем местами первый патрон из вектора магазина с последним
-      //После этого на месте первого патрона оказывается патрон из патронника
+      //ГЊГҐГ­ГїГҐГ¬ Г¬ГҐГ±ГІГ Г¬ГЁ ГЇГҐГ°ГўГ»Г© ГЇГ ГІГ°Г®Г­ ГЁГ§ ГўГҐГЄГІГ®Г°Г  Г¬Г ГЈГ Г§ГЁГ­Г  Г± ГЇГ®Г±Г«ГҐГ¤Г­ГЁГ¬
+      //ГЏГ®Г±Г«ГҐ ГЅГІГ®ГЈГ® Г­Г  Г¬ГҐГ±ГІГҐ ГЇГҐГ°ГўГ®ГЈГ® ГЇГ ГІГ°Г®Г­Г  Г®ГЄГ Г§Г»ГўГ ГҐГІГ±Гї ГЇГ ГІГ°Г®Г­ ГЁГ§ ГЇГ ГІГ°Г®Г­Г­ГЁГЄГ 
       SwapFirstLastAmmo(wpn);
       buf.is_firstlast_ammo_swapped:=true;
 
-      // Хак - смещаем указатель на первый элемент из вектора патронов, чтобы его не разрядило
+      // Г•Г ГЄ - Г±Г¬ГҐГ№Г ГҐГ¬ ГіГЄГ Г§Г ГІГҐГ«Гј Г­Г  ГЇГҐГ°ГўГ»Г© ГЅГ«ГҐГ¬ГҐГ­ГІ ГЁГ§ ГўГҐГЄГІГ®Г°Г  ГЇГ ГІГ°Г®Г­Г®Гў, Г·ГІГ®ГЎГ» ГҐГЈГ® Г­ГҐ Г°Г Г§Г°ГїГ¤ГЁГ«Г®
       ChangeAmmoVectorStart(wpn, sizeof(CCartridge));
     end;
   end;
 
-  //Если текущий тип патронов не соответствует тому, который будем заряжать - разрядим оружие
+  //Г…Г±Г«ГЁ ГІГҐГЄГіГ№ГЁГ© ГІГЁГЇ ГЇГ ГІГ°Г®Г­Г®Гў Г­ГҐ Г±Г®Г®ГІГўГҐГІГ±ГІГўГіГҐГІ ГІГ®Г¬Гі, ГЄГ®ГІГ®Г°Г»Г© ГЎГіГ¤ГҐГ¬ Г§Г Г°ГїГ¦Г ГІГј - Г°Г Г§Г°ГїГ¤ГЁГ¬ Г®Г°ГіГ¦ГЁГҐ
   need_unload:=false;
   if IsGrenadeMode(wpn) then begin
     cnt:=GetAmmoInGLCount(wpn);
@@ -155,7 +155,7 @@ begin
   end;
 
   if (buf<>nil) and buf.is_firstlast_ammo_swapped then begin
-    //Откатываем сделанные хаком изменения в векторе - неразряженный патрон из патронника магическим образом появляется обратно
+    //ГЋГІГЄГ ГІГ»ГўГ ГҐГ¬ Г±Г¤ГҐГ«Г Г­Г­Г»ГҐ ГµГ ГЄГ®Г¬ ГЁГ§Г¬ГҐГ­ГҐГ­ГЁГї Гў ГўГҐГЄГІГ®Г°ГҐ - Г­ГҐГ°Г Г§Г°ГїГ¦ГҐГ­Г­Г»Г© ГЇГ ГІГ°Г®Г­ ГЁГ§ ГЇГ ГІГ°Г®Г­Г­ГЁГЄГ  Г¬Г ГЈГЁГ·ГҐГ±ГЄГЁГ¬ Г®ГЎГ°Г Г§Г®Г¬ ГЇГ®ГїГўГ«ГїГҐГІГ±Гї Г®ГЎГ°Г ГІГ­Г®
     ChangeAmmoVectorStart(wpn, (-1)*sizeof(CCartridge));
   end;  
 end;
@@ -196,23 +196,23 @@ end;
 {$ifdef DISABLE_AUTOAMMOCHANGE}
 procedure CWeaponmagazined__TryReload_Patch();stdcall;
 asm
-  //проверяем, была ли от юзера команда на смену режима
+  //ГЇГ°Г®ГўГҐГ°ГїГҐГ¬, ГЎГ»Г«Г  Г«ГЁ Г®ГІ ГѕГ§ГҐГ°Г  ГЄГ®Г¬Г Г­Г¤Г  Г­Г  Г±Г¬ГҐГ­Гі Г°ГҐГ¦ГЁГ¬Г 
 
   cmp byte ptr [esi+$6C7], $FF //if m_set_next_ammoType_on_reload<>-1 then jmp
   jne @need_change
 
-  //Если в магазине пусто - имеет смысл автоматом сменить тип, дабы не было затупов юзеров
-  push eax //сохраняем важное
+  //Г…Г±Г«ГЁ Гў Г¬Г ГЈГ Г§ГЁГ­ГҐ ГЇГіГ±ГІГ® - ГЁГ¬ГҐГҐГІ Г±Г¬Г»Г±Г« Г ГўГІГ®Г¬Г ГІГ®Г¬ Г±Г¬ГҐГ­ГЁГІГј ГІГЁГЇ, Г¤Г ГЎГ» Г­ГҐ ГЎГ»Г«Г® Г§Г ГІГіГЇГ®Гў ГѕГ§ГҐГ°Г®Гў
+  push eax //Г±Г®ГµГ°Г Г­ГїГҐГ¬ ГўГ Г¦Г­Г®ГҐ
   push esi
   call GetCurrentAmmoCount
   test eax, eax
-  pop eax //восстановим сохраненное
+  pop eax //ГўГ®Г±Г±ГІГ Г­Г®ГўГЁГ¬ Г±Г®ГµГ°Г Г­ГҐГ­Г­Г®ГҐ
   je @need_change
 
-  mov eax, 0                    //говорим, что у оружия 0 доступных типов патронов ;)
+  mov eax, 0                    //ГЈГ®ГўГ®Г°ГЁГ¬, Г·ГІГ® Гі Г®Г°ГіГ¦ГЁГї 0 Г¤Г®Г±ГІГіГЇГ­Г»Гµ ГІГЁГЇГ®Гў ГЇГ ГІГ°Г®Г­Г®Гў ;)
 
   @need_change:
-  //делаем вырезанное
+  //Г¤ГҐГ«Г ГҐГ¬ ГўГ»Г°ГҐГ§Г Г­Г­Г®ГҐ
   sar eax, 02
   test al, al
   ret
@@ -225,28 +225,28 @@ asm
   cmp edi, ebp //orig check: (ac<cnt); ac = edi, cnt = ebp
   jae @finish
 
-  cmp byte ptr [esi+$6c7], $FF // если игрок нажал кнопку смены - разрешаем смену
+  cmp byte ptr [esi+$6c7], $FF // ГҐГ±Г«ГЁ ГЁГЈГ°Г®ГЄ Г­Г Г¦Г Г« ГЄГ­Г®ГЇГЄГі Г±Г¬ГҐГ­Г» - Г°Г Г§Г°ГҐГёГ ГҐГ¬ Г±Г¬ГҐГ­Гі
   jne @allowed_change
 
-  cmp edi, 0 // если в рюкзаке еще есть патроны текущего типа (ac>0), запрещаем автосмену
+  cmp edi, 0 // ГҐГ±Г«ГЁ Гў Г°ГѕГЄГ§Г ГЄГҐ ГҐГ№ГҐ ГҐГ±ГІГј ГЇГ ГІГ°Г®Г­Г» ГІГҐГЄГіГ№ГҐГЈГ® ГІГЁГЇГ  (ac>0), Г§Г ГЇГ°ГҐГ№Г ГҐГ¬ Г ГўГІГ®Г±Г¬ГҐГ­Гі
   jne @not_allowed_change
 
-  push eax //сохраняем важное
+  push eax //Г±Г®ГµГ°Г Г­ГїГҐГ¬ ГўГ Г¦Г­Г®ГҐ
   push esi
   call GetCurrentAmmoCount
   test eax, eax
-  pop eax //восстановим сохраненное
+  pop eax //ГўГ®Г±Г±ГІГ Г­Г®ГўГЁГ¬ Г±Г®ГµГ°Г Г­ГҐГ­Г­Г®ГҐ
   jne @not_allowed_change
 
 
-  @allowed_change: // Можем менять тип патронов - надо загнать нас в цикл перебора наличия различных типов  (т.е. как в оригинале)
+  @allowed_change: // ГЊГ®Г¦ГҐГ¬ Г¬ГҐГ­ГїГІГј ГІГЁГЇ ГЇГ ГІГ°Г®Г­Г®Гў - Г­Г Г¤Г® Г§Г ГЈГ­Г ГІГј Г­Г Г± Гў Г¶ГЁГЄГ« ГЇГҐГ°ГҐГЎГ®Г°Г  Г­Г Г«ГЁГ·ГЁГї Г°Г Г§Г«ГЁГ·Г­Г»Гµ ГІГЁГЇГ®Гў  (ГІ.ГҐ. ГЄГ ГЄ Гў Г®Г°ГЁГЈГЁГ­Г Г«ГҐ)
   xor ecx, ecx
   cmp ecx, 1
   jmp @finish
 
-  @not_allowed_change: // не можем менять тип патронов - надо вернуть результат условия (ac>=cnt)
-  //Но если мы пойдем мимо цикла, то всегда получим возвращение true из-за оптимизации компилятора!
-  //Вывод - сравниваем сами и возвращаемся из вызывающей функции
+  @not_allowed_change: // Г­ГҐ Г¬Г®Г¦ГҐГ¬ Г¬ГҐГ­ГїГІГј ГІГЁГЇ ГЇГ ГІГ°Г®Г­Г®Гў - Г­Г Г¤Г® ГўГҐГ°Г­ГіГІГј Г°ГҐГ§ГіГ«ГјГІГ ГІ ГіГ±Г«Г®ГўГЁГї (ac>=cnt)
+  //ГЌГ® ГҐГ±Г«ГЁ Г¬Г» ГЇГ®Г©Г¤ГҐГ¬ Г¬ГЁГ¬Г® Г¶ГЁГЄГ«Г , ГІГ® ГўГ±ГҐГЈГ¤Г  ГЇГ®Г«ГіГ·ГЁГ¬ ГўГ®Г§ГўГ°Г Г№ГҐГ­ГЁГҐ true ГЁГ§-Г§Г  Г®ГЇГІГЁГ¬ГЁГ§Г Г¶ГЁГЁ ГЄГ®Г¬ГЇГЁГ«ГїГІГ®Г°Г !
+  //Г‚Г»ГўГ®Г¤ - Г±Г°Г ГўГ­ГЁГўГ ГҐГ¬ Г±Г Г¬ГЁ ГЁ ГўГ®Г§ГўГ°Г Г№Г ГҐГ¬Г±Гї ГЁГ§ ГўГ»Г§Г»ГўГ ГѕГ№ГҐГ© ГґГіГ­ГЄГ¶ГЁГЁ
   xor eax, eax
   cmp edi, ebp //ac = edi, cnt = ebp
   jb @retx2
@@ -263,10 +263,10 @@ end;
 
 {$endif}
 
-//---------------------------------Патроны в патроннике для дробовиков----------------------------
+//---------------------------------ГЏГ ГІГ°Г®Г­Г» Гў ГЇГ ГІГ°Г®Г­Г­ГЁГЄГҐ Г¤Г«Гї Г¤Г°Г®ГЎГ®ГўГЁГЄГ®Гў----------------------------
 
 function CWeaponShotgun__OnAnimationEnd_OnAddCartridge(wpn:pointer):boolean; stdcall;
-//возвращает, стоит ли продолжать набивать патроны в TriStateReload, или хватит уже :)
+//ГўГ®Г§ГўГ°Г Г№Г ГҐГІ, Г±ГІГ®ГЁГІ Г«ГЁ ГЇГ°Г®Г¤Г®Г«Г¦Г ГІГј Г­Г ГЎГЁГўГ ГІГј ГЇГ ГІГ°Г®Г­Г» Гў TriStateReload, ГЁГ«ГЁ ГµГўГ ГІГЁГІ ГіГ¦ГҐ :)
 var
   buf:WpnBuf;
 begin
@@ -279,7 +279,7 @@ begin
       end;
     end;
   end else begin
-    virtual_CWeaponShotgun__AddCartridge(wpn, 1); //дань оригинальному коду ;)
+    virtual_CWeaponShotgun__AddCartridge(wpn, 1); //Г¤Г Г­Гј Г®Г°ГЁГЈГЁГ­Г Г«ГјГ­Г®Г¬Гі ГЄГ®Г¤Гі ;)
   end;
   result:=CWeaponShotgun__HaveCartridgeInInventory(wpn, 1);
 end;
@@ -294,10 +294,10 @@ asm
   popad
 end;
 
-//-----------------------------------------anm_close в случае ручного прерывания релоада----------------------------
+//-----------------------------------------anm_close Гў Г±Г«ГіГ·Г ГҐ Г°ГіГ·Г­Г®ГЈГ® ГЇГ°ГҐГ°Г»ГўГ Г­ГЁГї Г°ГҐГ«Г®Г Г¤Г ----------------------------
 procedure CWeaponShotgun__Action_OnStopReload(wpn:pointer); stdcall;
 begin
-  if (GetSubState(wpn)=EWeaponSubStates__eSubStateReloadEnd) or (IsWeaponJammed(wpn)) then begin //???первое никогда не выполнится - см исходник двига???
+  if (GetSubState(wpn)=EWeaponSubStates__eSubStateReloadEnd) or (IsWeaponJammed(wpn)) then begin //???ГЇГҐГ°ГўГ®ГҐ Г­ГЁГЄГ®ГЈГ¤Г  Г­ГҐ ГўГ»ГЇГ®Г«Г­ГЁГІГ±Гї - Г±Г¬ ГЁГ±ГµГ®Г¤Г­ГЁГЄ Г¤ГўГЁГЈГ ???
     exit;
   end;
   if not IsActionProcessing(wpn) then begin
@@ -316,7 +316,7 @@ asm
   popad
 end;
 
-//----------------------------------------------добавление патрона в open-------------------------------------------
+//----------------------------------------------Г¤Г®ГЎГ ГўГ«ГҐГ­ГЁГҐ ГЇГ ГІГ°Г®Г­Г  Гў open-------------------------------------------
 procedure CWeaponMagazined__OnAnimationEnd_anm_open(wpn:pointer); stdcall;
 var
   buf:WpnBuf;
@@ -328,7 +328,7 @@ begin
     exit;
   end;
 
-  SetSubState(wpn, EWeaponSubStates__eSubStateReloadInProcess); //вырезанное
+  SetSubState(wpn, EWeaponSubStates__eSubStateReloadInProcess); //ГўГ»Г°ГҐГ§Г Г­Г­Г®ГҐ
   buf:=GetBuffer(wpn);
   if (buf<>nil) and buf.AddCartridgeAfterOpen() then begin
     CWeaponShotgun__OnAnimationEnd_OnAddCartridge(wpn);
@@ -345,7 +345,7 @@ asm
   popad
 end;
 
-//-------------------------------------------------------Условие на расклин без патронов в инвентаре-----------------------------------------
+//-------------------------------------------------------Г“Г±Г«Г®ГўГЁГҐ Г­Г  Г°Г Г±ГЄГ«ГЁГ­ ГЎГҐГ§ ГЇГ ГІГ°Г®Г­Г®Гў Гў ГЁГ­ГўГҐГ­ГІГ Г°ГҐ-----------------------------------------
 function CWeaponShotgun_Needreload(wpn:pointer):boolean; stdcall;
 begin
   result:= (IsWeaponJammed(wpn) or CWeaponShotgun__HaveCartridgeInInventory(wpn, 1));
@@ -374,7 +374,7 @@ procedure CWeaponMagazined__TryReload_hasammo_Patch(); stdcall;
 asm
   cmp [esi+$690], 00 //original
   jne @finish
-  //cmp byte ptr [esi+$7f8], 1 //активен ли подствол сейчас
+  //cmp byte ptr [esi+$7f8], 1 //Г ГЄГІГЁГўГҐГ­ Г«ГЁ ГЇГ®Г¤Г±ГІГўГ®Г« Г±ГҐГ©Г·Г Г±
   pushad
     push esi
     call IsGrenadeMode
@@ -443,7 +443,7 @@ asm
 
 
   xor eax, eax
-  cmp eax, 0 //чтобы стандартный недокод подсчета даже не думал выполняться!
+  cmp eax, 0 //Г·ГІГ®ГЎГ» Г±ГІГ Г­Г¤Г Г°ГІГ­Г»Г© Г­ГҐГ¤Г®ГЄГ®Г¤ ГЇГ®Г¤Г±Г·ГҐГІГ  Г¤Г Г¦ГҐ Г­ГҐ Г¤ГіГ¬Г Г« ГўГ»ГЇГ®Г«Г­ГїГІГјГ±Гї!
   popad;
 end;
 
@@ -598,7 +598,7 @@ begin
     result:=true;
   end;
 
-  //переопределяем строку числа грен
+  //ГЇГҐГ°ГҐГ®ГЇГ°ГҐГ¤ГҐГ«ГїГҐГ¬ Г±ГІГ°Г®ГЄГі Г·ГЁГ±Г«Г  ГЈГ°ГҐГ­
   gl_status:=GetGLStatus(wpn);
   if (gl_status=1) or ((gl_status=2) and IsGLAttached(wpn)) then begin
     ammotypes:=GetGLAmmoTypesCount(wpn);
@@ -647,7 +647,7 @@ end;
 
 procedure CWeaponMagazinedWGrenade__PerformSwitchGL_ammoinverse_Patch(); stdcall;
 asm
-  //свопаем патроны
+  //Г±ГўГ®ГЇГ ГҐГ¬ ГЇГ ГІГ°Г®Г­Г»
 
   mov edi, [esi+$6C8]
   mov ebx, [esi+$7EC]
@@ -664,7 +664,7 @@ asm
   mov [esi+$6D0], ebx
   mov [esi+$7F4], edi
 
-  //делаем остаток функции
+  //Г¤ГҐГ«Г ГҐГ¬ Г®Г±ГІГ ГІГ®ГЄ ГґГіГ­ГЄГ¶ГЁГЁ
   mov eax, [esi+$6cc]
   sub eax, [esi+$6c8]
 
@@ -676,7 +676,7 @@ asm
 
 
   mov [esi+$69C], 0
-  //валим
+  //ГўГ Г«ГЁГ¬
   pop edi
   pop esi
   pop ebp
@@ -694,46 +694,46 @@ begin
   result:=false;
   setlength(debug_bytes, 6);
   ////////////////////////////////////////////////////
-  //[bug]отключаем баг с моментальной сменой типа патронов при перезарядке, когда у нас не хватает патронов текущего типа до полного магазина
-  //[bug]Оно же проявляется, если у оружия, у которого неполный магазин одного типа патронов, и такого типа в инвентаре больше нет, попробовать сменить тип и, не дожидаясь окончания анимы,  выбросить
-  //после подъема оружие не будет реагировать на клавишу смены типа
-  // причина в том, что в CWeaponMagazined::TryReload мы присваиваем значение члену m_ammoType вместо m_set_next_ammoType_on_reload
+  //[bug]Г®ГІГЄГ«ГѕГ·Г ГҐГ¬ ГЎГ ГЈ Г± Г¬Г®Г¬ГҐГ­ГІГ Г«ГјГ­Г®Г© Г±Г¬ГҐГ­Г®Г© ГІГЁГЇГ  ГЇГ ГІГ°Г®Г­Г®Гў ГЇГ°ГЁ ГЇГҐГ°ГҐГ§Г Г°ГїГ¤ГЄГҐ, ГЄГ®ГЈГ¤Г  Гі Г­Г Г± Г­ГҐ ГµГўГ ГІГ ГҐГІ ГЇГ ГІГ°Г®Г­Г®Гў ГІГҐГЄГіГ№ГҐГЈГ® ГІГЁГЇГ  Г¤Г® ГЇГ®Г«Г­Г®ГЈГ® Г¬Г ГЈГ Г§ГЁГ­Г 
+  //[bug]ГЋГ­Г® Г¦ГҐ ГЇГ°Г®ГїГўГ«ГїГҐГІГ±Гї, ГҐГ±Г«ГЁ Гі Г®Г°ГіГ¦ГЁГї, Гі ГЄГ®ГІГ®Г°Г®ГЈГ® Г­ГҐГЇГ®Г«Г­Г»Г© Г¬Г ГЈГ Г§ГЁГ­ Г®Г¤Г­Г®ГЈГ® ГІГЁГЇГ  ГЇГ ГІГ°Г®Г­Г®Гў, ГЁ ГІГ ГЄГ®ГЈГ® ГІГЁГЇГ  Гў ГЁГ­ГўГҐГ­ГІГ Г°ГҐ ГЎГ®Г«ГјГёГҐ Г­ГҐГІ, ГЇГ®ГЇГ°Г®ГЎГ®ГўГ ГІГј Г±Г¬ГҐГ­ГЁГІГј ГІГЁГЇ ГЁ, Г­ГҐ Г¤Г®Г¦ГЁГ¤Г ГїГ±Гј Г®ГЄГ®Г­Г·Г Г­ГЁГї Г Г­ГЁГ¬Г»,  ГўГ»ГЎГ°Г®Г±ГЁГІГј
+  //ГЇГ®Г±Г«ГҐ ГЇГ®Г¤ГєГҐГ¬Г  Г®Г°ГіГ¦ГЁГҐ Г­ГҐ ГЎГіГ¤ГҐГІ Г°ГҐГ ГЈГЁГ°Г®ГўГ ГІГј Г­Г  ГЄГ«Г ГўГЁГёГі Г±Г¬ГҐГ­Г» ГІГЁГЇГ 
+  // ГЇГ°ГЁГ·ГЁГ­Г  Гў ГІГ®Г¬, Г·ГІГ® Гў CWeaponMagazined::TryReload Г¬Г» ГЇГ°ГЁГ±ГўГ ГЁГўГ ГҐГ¬ Г§Г­Г Г·ГҐГ­ГЁГҐ Г·Г«ГҐГ­Гі m_ammoType ГўГ¬ГҐГ±ГІГ® m_set_next_ammoType_on_reload
   debug_bytes[0]:=$C7;
   if not WriteBufAtAdr(xrGame_addr+$2D0185, @debug_bytes[0],1) then exit;
-  if not WriteBufAtAdr(xrGame_addr+$2DE84B, @debug_bytes[0],1) then exit;  //CWeaponShotgun::HaveCarteidgeInInventory, потом все равно перезаписываем, но пусть будет
+  if not WriteBufAtAdr(xrGame_addr+$2DE84B, @debug_bytes[0],1) then exit;  //CWeaponShotgun::HaveCarteidgeInInventory, ГЇГ®ГІГ®Г¬ ГўГ±ГҐ Г°Г ГўГ­Г® ГЇГҐГ°ГҐГ§Г ГЇГЁГ±Г»ГўГ ГҐГ¬, Г­Г® ГЇГіГ±ГІГј ГЎГіГ¤ГҐГІ
 
 
-  //решает, сколько патронов надо зарядить в релоаде и делает сам релоад
+  //Г°ГҐГёГ ГҐГІ, Г±ГЄГ®Г«ГјГЄГ® ГЇГ ГІГ°Г®Г­Г®Гў Г­Г Г¤Г® Г§Г Г°ГїГ¤ГЁГІГј Гў Г°ГҐГ«Г®Г Г¤ГҐ ГЁ Г¤ГҐГ«Г ГҐГІ Г±Г Г¬ Г°ГҐГ«Г®Г Г¤
   addr:=xrGame_addr+$2CCD94;
   if not WriteJump(addr, cardinal(@CWeaponMagazined__OnAnimationEnd_DoReload_Patch), 20, true) then exit;
 
-  //опциональное добавление патрона после anm_open
+  //Г®ГЇГ¶ГЁГ®Г­Г Г«ГјГ­Г®ГҐ Г¤Г®ГЎГ ГўГ«ГҐГ­ГЁГҐ ГЇГ ГІГ°Г®Г­Г  ГЇГ®Г±Г«ГҐ anm_open
   addr:=xrGame_addr+$2DE41C;
   if not WriteJump(addr, cardinal(@CWeaponMagazined__OnAnimationEnd_anm_open_Patch), 15, true) then exit;
 
-  //При смене типа патронов магазин разряжается - заставляем оставить последний патрон неразряженным
-  nop_code(xrGame_addr+$2D10D8, 2); //убираем условие на неравенство секций последнего патрона и заряжаемого
+  //ГЏГ°ГЁ Г±Г¬ГҐГ­ГҐ ГІГЁГЇГ  ГЇГ ГІГ°Г®Г­Г®Гў Г¬Г ГЈГ Г§ГЁГ­ Г°Г Г§Г°ГїГ¦Г ГҐГІГ±Гї - Г§Г Г±ГІГ ГўГ«ГїГҐГ¬ Г®Г±ГІГ ГўГЁГІГј ГЇГ®Г±Г«ГҐГ¤Г­ГЁГ© ГЇГ ГІГ°Г®Г­ Г­ГҐГ°Г Г§Г°ГїГ¦ГҐГ­Г­Г»Г¬
+  nop_code(xrGame_addr+$2D10D8, 2); //ГіГЎГЁГ°Г ГҐГ¬ ГіГ±Г«Г®ГўГЁГҐ Г­Г  Г­ГҐГ°Г ГўГҐГ­Г±ГІГўГ® Г±ГҐГЄГ¶ГЁГ© ГЇГ®Г±Г«ГҐГ¤Г­ГҐГЈГ® ГЇГ ГІГ°Г®Г­Г  ГЁ Г§Г Г°ГїГ¦Г ГҐГ¬Г®ГЈГ®
   addr:=xrGame_addr+$2D1106;
   if not WriteJump(addr, cardinal(@CWeaponMagazined__ReloadMagazine_OnUnloadMag_Patch), 6, true) then exit;
-  //свопим первый и последний патрон, если у нас была смена типа 
+  //Г±ГўГ®ГЇГЁГ¬ ГЇГҐГ°ГўГ»Г© ГЁ ГЇГ®Г±Г«ГҐГ¤Г­ГЁГ© ГЇГ ГІГ°Г®Г­, ГҐГ±Г«ГЁ Гі Г­Г Г± ГЎГ»Г«Г  Г±Г¬ГҐГ­Г  ГІГЁГЇГ  
   addr:=xrGame_addr+$2D125F;
   if not WriteJump(addr, cardinal(@CWeaponMagazined__ReloadMagazine_OnFinish_Patch), 6, false) then exit;
 
-  //отключаем добавление "лишнего" патрона при прерывании релоада дробовика +заставляем играться anm_close (в CWeaponShotgun::Action)
+  //Г®ГІГЄГ«ГѕГ·Г ГҐГ¬ Г¤Г®ГЎГ ГўГ«ГҐГ­ГЁГҐ "Г«ГЁГёГ­ГҐГЈГ®" ГЇГ ГІГ°Г®Г­Г  ГЇГ°ГЁ ГЇГ°ГҐГ°Г»ГўГ Г­ГЁГЁ Г°ГҐГ«Г®Г Г¤Г  Г¤Г°Г®ГЎГ®ГўГЁГЄГ  +Г§Г Г±ГІГ ГўГ«ГїГҐГ¬ ГЁГЈГ°Г ГІГјГ±Гї anm_close (Гў CWeaponShotgun::Action)
   addr:=xrGame_addr+$2DE374;
   if not WriteJump(addr, cardinal(@CWeaponShotgun__Action_OnStopReload_Patch), 30, true) then exit;
 
-  //патрон в патроннике+анимация расклинивания+отвечает за добавление патрона в магазин
+  //ГЇГ ГІГ°Г®Г­ Гў ГЇГ ГІГ°Г®Г­Г­ГЁГЄГҐ+Г Г­ГЁГ¬Г Г¶ГЁГї Г°Г Г±ГЄГ«ГЁГ­ГЁГўГ Г­ГЁГї+Г®ГІГўГҐГ·Г ГҐГІ Г§Г  Г¤Г®ГЎГ ГўГ«ГҐГ­ГЁГҐ ГЇГ ГІГ°Г®Г­Г  Гў Г¬Г ГЈГ Г§ГЁГ­
   addr:=xrGame_addr+$2DE3ED;
   if not WriteJump(addr, cardinal(@CWeaponShotgun__OnAnimationEnd_OnAddCartridge_Patch), 22, true) then exit;
 
-  //изменим условие, которое не дает расклинивать CWeaponMagazined, если патронов к нему нет ни в инвентаре, ни в магазине
-  //оно существенно только при перезарядке в режиме подствола
+  //ГЁГ§Г¬ГҐГ­ГЁГ¬ ГіГ±Г«Г®ГўГЁГҐ, ГЄГ®ГІГ®Г°Г®ГҐ Г­ГҐ Г¤Г ГҐГІ Г°Г Г±ГЄГ«ГЁГ­ГЁГўГ ГІГј CWeaponMagazined, ГҐГ±Г«ГЁ ГЇГ ГІГ°Г®Г­Г®Гў ГЄ Г­ГҐГ¬Гі Г­ГҐГІ Г­ГЁ Гў ГЁГ­ГўГҐГ­ГІГ Г°ГҐ, Г­ГЁ Гў Г¬Г ГЈГ Г§ГЁГ­ГҐ
+  //Г®Г­Г® Г±ГіГ№ГҐГ±ГІГўГҐГ­Г­Г® ГІГ®Г«ГјГЄГ® ГЇГ°ГЁ ГЇГҐГ°ГҐГ§Г Г°ГїГ¤ГЄГҐ Гў Г°ГҐГ¦ГЁГ¬ГҐ ГЇГ®Г¤Г±ГІГўГ®Г«Г 
   addr:=xrGame_addr+$2D00AD;
   if not WriteJump(addr, cardinal(@CWeaponMagazined__TryReload_hasammo_Patch), 7, true) then exit;
 
 
-  //дадим возможность расклинивать дробовик, когда в инвентаре нет патронов
+  //Г¤Г Г¤ГЁГ¬ ГўГ®Г§Г¬Г®Г¦Г­Г®Г±ГІГј Г°Г Г±ГЄГ«ГЁГ­ГЁГўГ ГІГј Г¤Г°Г®ГЎГ®ГўГЁГЄ, ГЄГ®ГЈГ¤Г  Гў ГЁГ­ГўГҐГ­ГІГ Г°ГҐ Г­ГҐГІ ГЇГ ГІГ°Г®Г­Г®Гў
   addr:=xrGame_addr+$2DE94A;
   if not WriteJump(addr, cardinal(@CWeaponShotgun__TriStateReload_Needreload_Patch), 11, true) then exit;
   addr:=xrGame_addr+$2DE9D1;
@@ -752,23 +752,23 @@ begin
   if not WriteJump(addr, cardinal(@CWeaponShotgun__HaveCartridgeInInventory_DisableAutoAmmoChange_Patch), 9, true) then exit;
 {$endif}
 
-  //[bug] баг с неправильным расчетом веса оружия в CWeapon::Weight: не учитывается возможность наличия в магазине боеприпасов разных типов, а также зарядов в подствольнике
+  //[bug] ГЎГ ГЈ Г± Г­ГҐГЇГ°Г ГўГЁГ«ГјГ­Г»Г¬ Г°Г Г±Г·ГҐГІГ®Г¬ ГўГҐГ±Г  Г®Г°ГіГ¦ГЁГї Гў CWeapon::Weight: Г­ГҐ ГіГ·ГЁГІГ»ГўГ ГҐГІГ±Гї ГўГ®Г§Г¬Г®Г¦Г­Г®Г±ГІГј Г­Г Г«ГЁГ·ГЁГї Гў Г¬Г ГЈГ Г§ГЁГ­ГҐ ГЎГ®ГҐГЇГ°ГЁГЇГ Г±Г®Гў Г°Г Г§Г­Г»Гµ ГІГЁГЇГ®Гў, Г  ГІГ ГЄГ¦ГҐ Г§Г Г°ГїГ¤Г®Гў Гў ГЇГ®Г¤Г±ГІГўГ®Г«ГјГ­ГЁГЄГҐ
   addr:=xrGame_addr+$2BE9B7;
   if not WriteJump(addr, cardinal(@CWeapon__Weight_CalcAmmoWeight_Patch), 7, true) then exit;
 
-  //[bug] баг с определением числа гранат для подствола - определяется только число для 1го типа, остальные игнорятся
+  //[bug] ГЎГ ГЈ Г± Г®ГЇГ°ГҐГ¤ГҐГ«ГҐГ­ГЁГҐГ¬ Г·ГЁГ±Г«Г  ГЈГ°Г Г­Г ГІ Г¤Г«Гї ГЇГ®Г¤Г±ГІГўГ®Г«Г  - Г®ГЇГ°ГҐГ¤ГҐГ«ГїГҐГІГ±Гї ГІГ®Г«ГјГЄГ® Г·ГЁГ±Г«Г® Г¤Г«Гї 1ГЈГ® ГІГЁГЇГ , Г®Г±ГІГ Г«ГјГ­Г»ГҐ ГЁГЈГ­Г®Г°ГїГІГ±Гї
   addr:=xrGame_addr+$2D2562;
   if not WriteJump(addr, cardinal(@CWeaponMagazinedWGrenade__GetBriefInfo_GrenadesCount_Patch), 17, true) then exit;
 
 
-  //переделка схемы BriefInfo
+  //ГЇГҐГ°ГҐГ¤ГҐГ«ГЄГ  Г±ГµГҐГ¬Г» BriefInfo
   addr:=xrGame_addr+$2CE360;
   if not WriteJump(addr, cardinal(@CWeaponMagazined__GetBriefInfo_Replace_Patch), 5, false) then exit;
   addr:=xrGame_addr+$2D2110;
   if not WriteJump(addr, cardinal(@CWeaponMagazinedWGrenade__GetBriefInfo_Replace_Patch), 5, false) then exit;
 
 
-  //[bug] баг с инверсией порядка патронов в магазине при переключении на подствол и обратно - thanks to Shoker
+  //[bug] ГЎГ ГЈ Г± ГЁГ­ГўГҐГ°Г±ГЁГҐГ© ГЇГ®Г°ГїГ¤ГЄГ  ГЇГ ГІГ°Г®Г­Г®Гў Гў Г¬Г ГЈГ Г§ГЁГ­ГҐ ГЇГ°ГЁ ГЇГҐГ°ГҐГЄГ«ГѕГ·ГҐГ­ГЁГЁ Г­Г  ГЇГ®Г¤Г±ГІГўГ®Г« ГЁ Г®ГЎГ°Г ГІГ­Г® - thanks to Shoker
   addr:=xrGame_addr+$2D3810;
   if not WriteJump(addr, cardinal(@CWeaponMagazinedWGrenade__PerformSwitchGL_ammoinverse_Patch), 6, false) then exit;
 
