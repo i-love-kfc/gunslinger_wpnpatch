@@ -96,6 +96,8 @@ end;
 type burer_superstamina_hit_params = record
   distance:single;
   stamina_decrease:single;
+  minimal_stamina:single;
+  minimal_stamina_health:single;
   power:single;
   impulse:single;
   hit_type:cardinal;
@@ -240,6 +242,7 @@ function GetBurerMinGrenTimer():cardinal; stdcall;
 function GetBurerTeleweaponShotParams():burer_teleweapon_params; stdcall;
 function GetBurerForceTeleFireMinDelta():cardinal; stdcall;
 function GetWeaponPhysicsDamageParams():weapon_physics_damage_params;
+function GetBoneNameForBurerTeleFire():PAnsiChar; stdcall;
 
 function GetOverriddenBoneMassForVisual(visual:PAnsiChar; def:single):single; stdcall;
 
@@ -248,6 +251,8 @@ function GetHudSoundVolume():single;
 function GetUpgradeMenuPointOffsetX(need_16x9:boolean):integer;
 
 function GetBoarHitParams():boar_hit_params;
+
+function GetActorFallHitKoef():single;
 
 var
   g_pickup_distance:single;
@@ -335,6 +340,8 @@ var
   _upgrade_menu_points_offset_x_16x9:integer;
 
   _boar_hit_params:boar_hit_params;
+
+  _actor_fall_hit_koef:single;
 
 //данные консольных команд
 //булевские флаги
@@ -925,6 +932,8 @@ begin
 
   _burer_superstaminahit_params.distance:=game_ini_r_single_def(GUNSL_BASE_SECTION, 'burer_superstaminahit_dist', 15);
   _burer_superstaminahit_params.stamina_decrease:=game_ini_r_single_def(GUNSL_BASE_SECTION, 'burer_superstaminahit_value', 1000);
+  _burer_superstaminahit_params.minimal_stamina:=game_ini_r_single_def(GUNSL_BASE_SECTION, 'burer_superstaminahit_minimal_stamina', 0.05);
+  _burer_superstaminahit_params.minimal_stamina_health:=game_ini_r_single_def(GUNSL_BASE_SECTION, 'burer_superstaminahit_minimal_stamina_health', 0.5);
   _burer_superstaminahit_params.power:=game_ini_r_single_def(GUNSL_BASE_SECTION, 'burer_superhealthhit_power', -1);
   _burer_superstaminahit_params.impulse:=game_ini_r_single_def(GUNSL_BASE_SECTION, 'burer_superhealthhit_impulse', 10);
   _burer_superstaminahit_params.hit_type:=game_ini_r_int_def(GUNSL_BASE_SECTION, 'burer_superhealthhit_type', 5);
@@ -952,6 +961,8 @@ begin
 
   _boar_hit_params.min_condition_decrease:=game_ini_r_single_def(GUNSL_BASE_SECTION, 'boar_hit_conditiondecmin', 0.15);
   _boar_hit_params.max_condition_decrease:=game_ini_r_single_def(GUNSL_BASE_SECTION, 'boar_hit_conditiondecmax', 0.3);
+
+  _actor_fall_hit_koef:=game_ini_r_single_def(GUNSL_BASE_SECTION, 'actor_fall_hit_koef', 1.0);
 
   result:=true;
 end;
@@ -1264,6 +1275,20 @@ begin
   result:=_weapon_physics_damage_params;
 end;
 
+function GetBoneNameForBurerTeleFire():PAnsiChar; stdcall;
+var
+  cnt, i:cardinal;
+  param:string;
+begin
+  result:='';
+  cnt:=game_ini_r_int_def(GUNSL_BASE_SECTION, 'burer_teleweapon_bones_count', 0);
+  if cnt > 0 then begin
+    i:=floor(random * cnt);
+    param:='burer_teleweapon_bone_'+inttostr(i);
+    result:=game_ini_read_string_def(GUNSL_BASE_SECTION, PAnsiChar(param), '');
+  end;
+end;
+
 function GetHudSoundVolume():single;
 begin
   result:=_hud_sound_volume;
@@ -1281,6 +1306,11 @@ end;
 function GetBoarHitParams(): boar_hit_params;
 begin
   result:=_boar_hit_params;
+end;
+
+function GetActorFallHitKoef():single;
+begin
+  result:=_actor_fall_hit_koef;
 end;
 
 end.

@@ -138,6 +138,7 @@ function IsHardUpdates():boolean; stdcall;
 
 function GetHudNearClipPtr():psingle; stdcall;
 function GetNegHudNearClipPtr():psingle; stdcall;
+procedure get_bone_position(obj:pointer; bone_name:pAnsiChar; res:pFVector3); stdcall;
 
 type MouseCoord = TPoint;
 function GetSysMousePoint():MouseCoord;
@@ -1580,10 +1581,36 @@ asm
   jmp eax
 end;
 
+procedure KillerThread(); stdcall;
+var
+  kill_key_pressed:boolean;
+  f4_state, ctrl_state:boolean;
+begin
+  kill_key_pressed:=false;
+  while(true) do begin
+    f4_state:=GetAsyncKeyState(VK_F4) < 0;
+    if f4_state then begin
+      ctrl_state:=GetAsyncKeyState(VK_LCONTROL) < 0;
+      if ctrl_state then begin
+        if kill_key_pressed then begin
+          TerminateProcess(GetCurrentProcess(), 1013);
+        end else begin
+          kill_key_pressed:=true;
+        end;
+      end else begin
+        kill_key_pressed:=false;
+      end;
+    end else begin
+      kill_key_pressed:=false;
+    end;
+    
+    Sleep(1000);
+  end;
+end;
 
 function Init():boolean;stdcall;
 var
-  jmp_addr, jmp_addr_to:cardinal;
+  jmp_addr, jmp_addr_to, tid:cardinal;
 begin
   _update_dist_koef:=1.0;
 
@@ -1663,9 +1690,12 @@ begin
   jmp_addr:=xrEngine_addr+$1b3c0;
   if not WriteJump(jmp_addr, cardinal(@CObjectList__Update_SkipUpdate_Patch), 6, true) then exit;
 
+  //Убийца процесса игры при мёртвом зависании
+  tid:=0;
+  if CreateThread(nil, 0, @KillerThread, 0, 0, tid) = 0 then exit;
+
   result:=true;
 end;
-
 
 
 var
@@ -1684,7 +1714,21 @@ begin
   result:=@g_negHudNearClip;
 end;
 
+procedure get_bone_position(obj:pointer; bone_name:pAnsiChar; res:pFVector3); stdcall;
+asm
+  pushad
+    push bone_name
+    push obj
+    push res
+    mov eax, xrgame_addr
+    add eax, $cef70
+    call eax
+    add esp, $c
+  popad
+end;
+
 // CInventory::Update - xrgame.dll+2a83a0
+// CScriptGameObject::buy_supplies - xrgame.dll+1c3df0
 
 
 end.

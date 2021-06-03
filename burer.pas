@@ -279,7 +279,9 @@ begin
       force_shield:=true;
     end else if sniper_weapon then begin
       pgravi_ready^:=false;
-      if (IsLongRecharge(itm, MIN_ANTIAIM_LOCK_TIME_BEFORE_SHOT) or IsActorLookTurnedAway(burer) or (random < 0.3)) and panti_aim_ready^ then begin
+      if ((GetCurrentAmmoCount(itm) = 0) or (GetCurrentState(itm) = EWeaponStates__eReload)) and panti_aim_ready^ then begin
+        force_antiaim:=true
+      end else if (IsLongRecharge(itm, MIN_ANTIAIM_LOCK_TIME_BEFORE_SHOT) or IsActorLookTurnedAway(burer) or (random < 0.3)) and panti_aim_ready^ then begin
         force_antiaim:=true
       end else begin
         if (previous_state^ = eStateBurerAttack_Shield) and not IsBurerUnderAim(burer, BurerUnderAimWide) and panti_aim_ready^ then begin
@@ -1110,7 +1112,8 @@ end;
 
 procedure CStateBurerAttackGravi__ExecuteGraviContinue_delay_Patch(); stdcall;
 asm
-  fldcw [esp]
+  fldcw [esp+4]
+
   pushad
   mov eax, [ecx+$10]
   push eax
@@ -1253,10 +1256,75 @@ asm
   jmp eax
 end;
 
+procedure OverrideTeleAttackTargetPoint(coords:pFVector3; target_object:pointer); stdcall;
+var
+  bone:PAnsiChar;
+begin
+  if (target_object<>nil) and (GetActor() = target_object) then begin
+    bone:=GetBoneNameForBurerTeleFire();
+    if length(bone)>0 then begin
+      get_bone_position(target_object, bone,  coords);
+    end;
+  end;
+end;
+
+procedure CStateBurerAttackTele__FireAllToEnemy_selecttargetpatch(); stdcall;
+asm
+  push [esp+8] //дублируем аргумент с указателем на цель
+  push [esp+8] //дублируем аргумент с указателем на выходной вектор
+
+  mov eax, xrgame_addr
+  add eax, $cf0d0 //get_head_position
+  call eax;
+  add esp, 8 // снимаем аргументы
+
+  mov edx, [esp+8]
+  pushad
+  push edx // указатель на цель
+  push eax // указатель на буфер с координатами 
+  call OverrideTeleAttackTargetPoint
+  popad
+
+  pop edx //ret addr
+  jmp edx
+end;
+
 procedure anti_aim_ability__check_start_condition__candetect_Patch(); stdcall;
 asm
   mov eax, 1
   ret
+end;
+
+procedure RestoreMinimalStamina(); stdcall;
+var
+  act, wpn:pointer;
+  wpn_dangerous:boolean;
+  ss_params:burer_superstamina_hit_params;
+const
+  SUPERSTAMINA_HIT_PERIOD:cardinal=100;
+begin
+  act:=GetActor();
+  wpn := GetActorActiveItem();
+  wpn_dangerous:=(wpn<>nil) and (IsSniperWeapon(wpn) or IsWeaponReadyForBigBoom(wpn, nil));
+  if (act <> nil) and (not wpn_dangerous) and (GetTimeDeltaSafe(GetLastSuperStaminaHitTime()) < SUPERSTAMINA_HIT_PERIOD) then begin
+    ss_params:=GetBurerSuperstaminaHitParams();
+    if (GetActorStamina(act) < ss_params.minimal_stamina) and (GetActorHealth(act) > ss_params.minimal_stamina_health) then begin
+      SetActorStamina(act, ss_params.minimal_stamina);
+    end;
+  end;
+end;
+
+procedure CBurer__StaminaHit_RestoreMinimalStamina_Patch(); stdcall;
+asm
+  pushad
+    call RestoreMinimalStamina
+  popad
+  pop eax //ret addr
+  pop edi
+  pop ebx
+  pop esi
+  add esp, $28
+  jmp eax
 end;
 
 function Init():boolean; stdcall;
@@ -1268,6 +1336,10 @@ begin
   //в CBurer::StaminaHit (xrgame+102730) - увеличивает урон стамине, если актор слишком близко
   jmp_addr:=xrGame_addr+$1027a2;
   if not WriteJump(jmp_addr, cardinal(@CBurer__StaminaHit_Patch), 6, true) then exit;
+
+  //в конце CBurer::StaminaHit восстанавливаем минимальную стамину актору
+  jmp_addr:=xrGame_addr+$1028dd;
+  if not WriteJump(jmp_addr, cardinal(@CBurer__StaminaHit_RestoreMinimalStamina_Patch), 6, true) then exit;
 
   //в CStateBurerAttack<Object>::execute (xrgame.dll+10ab20) меняем приоритеты, чтобы при приближении актора с наличием стамины эту стамину отнимало
   jmp_addr:=xrGame_addr+$10acb5;
@@ -1385,6 +1457,10 @@ begin
   jmp_addr:=xrGame_addr+$cf88d;
   if not WriteJump(jmp_addr, cardinal(@anti_aim_ability__check_start_condition__candetect_Patch), 5, true) then exit;
 
+  //В CStateBurerAttackTele<Object>::FireAllToEnemy рандомизируем выбор кости, по которой идёт бросок
+  jmp_addr:=xrGame_addr+$104db0;
+  if not WriteJump(jmp_addr, cardinal(@CStateBurerAttackTele__FireAllToEnemy_selecttargetpatch), 5, true) then exit;
+
   //CPHCollisionDamageReceiver::CollisionHit - xrgame+28f970
   //xrgame+$101c60 - CBurer::DeactivateShield
 
@@ -1401,6 +1477,8 @@ begin
   //CStateBurerAttackGravi::ExecuteGraviContinue - xrgame.dll+105730
   //CStateBurerAttackTele::critical_finalize - xrgame.dll+1092a0
   //CStateBurerAttackTele::deactivate - xrgame.dll+1083f0
+  //CStateBurerAttackTele::ExecuteTeleFire - 
+  //CStateBurerAttackTele::FireAllToEnemy - xrgame.dll+104d80
   //CStateBurerAttackTele::initialize - xrgame.dll+10a40b
   //CStateBurerAttackTele::SelectObjects - xrgame.dll+109b50
   //CTelekinesis::activate - xrgame.dll+da250
